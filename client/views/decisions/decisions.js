@@ -1,7 +1,9 @@
 'use strict';
 
 angular.module('myo')
-.controller('DecisionsCtrl', function($scope, $state, User){
+.controller('DecisionsCtrl', function($scope, $state, User, $window){
+  var myMyo = $window.Myo.create();
+
   var choices = {
     foods: {
       good: ['salad', 'grilledChicken', 'fish', 'vegetables'],
@@ -85,21 +87,44 @@ angular.module('myo')
   $scope.bad = 0;
   $scope.userChoices = [];
 
-  $scope.click = function(choice){
+  // $scope.click = function(choice){
+  //
+  // };
 
-  };
-
-  $scope.choose = function(choice){
+  function choose(choice){
     $scope.userChoices.push(choice);
     getChoices('food');
     checkResults();
-  };
+  }
   function checkResults(){
+    console.log($scope.userChoices);
     if($scope.userChoices.length === choices.foods.good.length){
       User.saveResults($scope.userChoices)
       .then(function(response){
+        console.log(response);
         $state.go('results');
       });
     }
   }
+  myMyo.on('connected', function () {
+    myMyo.setLockingPolicy('none');
+  });
+
+  var left = 0;
+  var right = 0;
+
+  myMyo.on('wave_in', function(){
+    left+=1;
+    if(left>=2){
+      choose('LEFT');
+      left = 0;
+    }
+  });
+  myMyo.on('wave_out', function(){
+    right+=1;
+    if(right>=2){
+      choose('RIGHT');
+      right = 0;
+    }
+  });
 });
